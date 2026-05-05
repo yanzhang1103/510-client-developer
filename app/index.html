@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Creator Check-in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f1ea;
+    --ink: #1a1a1a;
+    --muted: #6b6357;
+    --accent: #c4451c;
+    --line: #1a1a1a;
+    --card: #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); color: var(--ink); font-family: 'Fraunces', Georgia, serif; min-height: 100vh; }
+  body { padding: 32px 24px 80px; max-width: 720px; margin: 0 auto; }
+
+  header.site {
+    border-bottom: 1.5px solid var(--line);
+    padding-bottom: 16px;
+    margin-bottom: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  header.site h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  header.site .meta { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  nav.tabs { display: flex; gap: 24px; margin-bottom: 32px; font-family: 'JetBrains Mono', monospace; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+  nav.tabs button { background: none; border: none; cursor: pointer; padding: 6px 0; color: var(--muted); border-bottom: 1.5px solid transparent; font-family: inherit; font-size: inherit; letter-spacing: inherit; text-transform: inherit; }
+  nav.tabs button.active { color: var(--ink); border-bottom-color: var(--accent); }
+
+  section { display: none; }
+  section.active { display: block; }
+
+  h2 { font-size: 32px; font-weight: 400; line-height: 1.15; margin-bottom: 8px; letter-spacing: -0.02em; }
+  h2 em { font-style: italic; color: var(--accent); }
+  .subtitle { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 32px; }
+
+  .field { margin-bottom: 28px; }
+  .field label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+
+  .scale { display: flex; gap: 6px; }
+  .scale button {
+    flex: 1; aspect-ratio: 1; background: var(--card); border: 1.5px solid var(--line);
+    font-family: 'Fraunces', serif; font-size: 18px; cursor: pointer; transition: all 0.15s ease;
+  }
+  .scale button:hover { background: var(--ink); color: var(--bg); }
+  .scale button.selected { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+  textarea, input[type="text"] {
+    width: 100%; padding: 14px; background: var(--card); border: 1.5px solid var(--line);
+    font-family: 'Fraunces', serif; font-size: 16px; color: var(--ink); resize: vertical;
+  }
+  textarea { min-height: 90px; }
+  textarea:focus, input:focus { outline: none; border-color: var(--accent); }
+
+  .session-toggle { display: flex; gap: 0; }
+  .session-toggle button {
+    flex: 1; padding: 14px; background: var(--card); border: 1.5px solid var(--line);
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer;
+  }
+  .session-toggle button + button { border-left: none; }
+  .session-toggle button.active { background: var(--ink); color: var(--bg); }
+
+  .submit {
+    display: inline-block; margin-top: 8px; padding: 14px 28px; background: var(--accent); color: var(--bg);
+    border: none; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+  }
+  .submit:hover { background: var(--ink); }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 12px 20px; font-family: 'JetBrains Mono', monospace; font-size: 12px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .toast.show { opacity: 1; }
+
+  .history-list { display: flex; flex-direction: column; gap: 16px; }
+  .entry {
+    background: var(--card); border: 1.5px solid var(--line); padding: 20px;
+    display: grid; grid-template-columns: 80px 1fr; gap: 20px;
+  }
+  .entry .date { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .entry .body .badges { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+  .entry .body .badge { font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 3px 8px; border: 1px solid var(--ink); text-transform: uppercase; letter-spacing: 0.06em; }
+  .entry .body .badge.accent { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+  .entry .body .note { font-size: 15px; line-height: 1.5; color: var(--ink); margin-top: 4px; }
+  .entry .body .meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .empty { text-align: center; padding: 60px 20px; color: var(--muted); font-style: italic; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 32px; }
+  .stat { background: var(--card); border: 1.5px solid var(--line); padding: 18px; }
+  .stat .label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .stat .value { font-size: 32px; font-weight: 400; margin-top: 4px; letter-spacing: -0.02em; }
+  .stat .value small { font-size: 14px; color: var(--muted); }
+
+  .chart-wrap { background: var(--card); border: 1.5px solid var(--line); padding: 20px; margin-bottom: 24px; }
+  .chart-title { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; }
+  svg.chart { width: 100%; height: 180px; display: block; }
+
+  .danger { background: none; border: 1px solid var(--muted); color: var(--muted); padding: 8px 14px; font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer; }
+  .danger:hover { color: var(--accent); border-color: var(--accent); }
+
+  footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <h1>creator check-in</h1>
+  <span class="meta">v0.2 · mvp</span>
+</header>
+
+<nav class="tabs">
+  <button class="tab active" data-tab="checkin">check in</button>
+  <button class="tab" data-tab="history">history</button>
+  <button class="tab" data-tab="insights">insights</button>
+</nav>
+
+<!-- CHECK-IN -->
+<section id="checkin" class="active">
+  <h2>How is your <em>creative state</em> right now?</h2>
+  <p class="subtitle">30 seconds · before or after a session</p>
+
+  <div class="field">
+    <label>Session phase</label>
+    <div class="session-toggle" id="phase">
+      <button data-val="pre" class="active">pre-session</button>
+      <button data-val="post">post-session</button>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Energy <span id="energyLabel">— / 5</span></label>
+    <div class="scale" id="energyScale"></div>
+  </div>
+
+  <div class="field">
+    <label>Focus <span id="focusLabel">— / 5</span></label>
+    <div class="scale" id="focusScale"></div>
+  </div>
+
+  <div class="field">
+    <label>Mood <span id="moodLabel">— / 5</span></label>
+    <div class="scale" id="moodScale"></div>
+  </div>
+
+  <div class="field">
+    <label>One thing on your mind (optional)</label>
+    <textarea id="note" placeholder="A line of lyric, a worry, a phrase..."></textarea>
+  </div>
+
+  <button class="submit" id="saveBtn">save check-in</button>
+</section>
+
+<!-- HISTORY -->
+<section id="history">
+  <h2>Your <em>recent</em> sessions</h2>
+  <p class="subtitle">most recent first</p>
+  <div id="historyList" class="history-list"></div>
+</section>
+
+<!-- INSIGHTS -->
+<section id="insights">
+  <h2>What the <em>data</em> suggests</h2>
+  <p class="subtitle">based on your check-ins so far</p>
+
+  <div class="stats-grid">
+    <div class="stat"><div class="label">Total check-ins</div><div class="value" id="statCount">0</div></div>
+    <div class="stat"><div class="label">Avg energy</div><div class="value" id="statEnergy">—</div></div>
+    <div class="stat"><div class="label">Avg focus</div><div class="value" id="statFocus">—</div></div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-title">energy over last 14 check-ins</div>
+    <svg class="chart" id="chart" viewBox="0 0 600 180" preserveAspectRatio="none"></svg>
+  </div>
+
+  <button class="danger" id="resetBtn">reset all data</button>
+</section>
+
+<div class="toast" id="toast">saved</div>
+
+<footer>
+  <span>creator check-in / mvp</span>
+  <span>local only · no cloud</span>
+</footer>
+
+<script>
+const STORAGE_KEY = 'creator_checkin_v1';
+
+// State
+let state = {
+  phase: 'pre',
+  energy: null,
+  focus: null,
+  mood: null,
+};
+
+// Build scales
+function buildScale(id, key) {
+  const wrap = document.getElementById(id);
+  for (let i = 1; i <= 5; i++) {
+    const b = document.createElement('button');
+    b.textContent = i;
+    b.dataset.val = i;
+    b.addEventListener('click', () => {
+      wrap.querySelectorAll('button').forEach(x => x.classList.remove('selected'));
+      b.classList.add('selected');
+      state[key] = i;
+      document.getElementById(key + 'Label').textContent = i + ' / 5';
+    });
+    wrap.appendChild(b);
+  }
+}
+buildScale('energyScale', 'energy');
+buildScale('focusScale', 'focus');
+buildScale('moodScale', 'mood');
+
+// Phase toggle
+document.querySelectorAll('#phase button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#phase button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.phase = b.dataset.val;
+  });
+});
+
+// Tabs
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('section').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(t.dataset.tab).classList.add('active');
+    if (t.dataset.tab === 'history') renderHistory();
+    if (t.dataset.tab === 'insights') renderInsights();
+  });
+});
+
+// Save
+document.getElementById('saveBtn').addEventListener('click', () => {
+  if (state.energy == null || state.focus == null || state.mood == null) {
+    showToast('please rate energy, focus, and mood');
+    return;
+  }
+  const entry = {
+    id: Date.now(),
+    timestamp: new Date().toISOString(),
+    phase: state.phase,
+    energy: state.energy,
+    focus: state.focus,
+    mood: state.mood,
+    note: document.getElementById('note').value.trim(),
+  };
+  const all = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  all.push(entry);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  showToast('saved');
+  // reset form
+  state = { phase: 'pre', energy: null, focus: null, mood: null };
+  document.querySelectorAll('.scale button').forEach(x => x.classList.remove('selected'));
+  document.getElementById('energyLabel').textContent = '— / 5';
+  document.getElementById('focusLabel').textContent = '— / 5';
+  document.getElementById('moodLabel').textContent = '— / 5';
+  document.getElementById('note').value = '';
+});
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+// History
+function renderHistory() {
+  const all = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').reverse();
+  const list = document.getElementById('historyList');
+  if (all.length === 0) {
+    list.innerHTML = '<div class="empty">no check-ins yet — tap "check in" to start.</div>';
+    return;
+  }
+  list.innerHTML = all.map(e => {
+    const d = new Date(e.timestamp);
+    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    return `
+      <div class="entry">
+        <div class="date">${dateStr}<br>${timeStr}</div>
+        <div class="body">
+          <div class="badges">
+            <span class="badge accent">${e.phase}</span>
+            <span class="badge">energy ${e.energy}</span>
+            <span class="badge">focus ${e.focus}</span>
+            <span class="badge">mood ${e.mood}</span>
+          </div>
+          ${e.note ? `<div class="note">"${escapeHtml(e.note)}"</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Insights
+function renderInsights() {
+  const all = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  document.getElementById('statCount').textContent = all.length;
+  if (all.length === 0) {
+    document.getElementById('statEnergy').innerHTML = '—';
+    document.getElementById('statFocus').innerHTML = '—';
+    document.getElementById('chart').innerHTML = '';
+    return;
+  }
+  const avg = (k) => (all.reduce((s, e) => s + e[k], 0) / all.length).toFixed(1);
+  document.getElementById('statEnergy').innerHTML = avg('energy') + ' <small>/ 5</small>';
+  document.getElementById('statFocus').innerHTML = avg('focus') + ' <small>/ 5</small>';
+
+  // chart: last 14 energy values
+  const recent = all.slice(-14);
+  const w = 600, h = 180, pad = 20;
+  const stepX = (w - pad * 2) / Math.max(recent.length - 1, 1);
+  const points = recent.map((e, i) => {
+    const x = pad + i * stepX;
+    const y = h - pad - ((e.energy - 1) / 4) * (h - pad * 2);
+    return `${x},${y}`;
+  }).join(' ');
+  const svg = document.getElementById('chart');
+  svg.innerHTML = `
+    <line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" stroke="#1a1a1a" stroke-width="1"/>
+    <polyline points="${points}" fill="none" stroke="#c4451c" stroke-width="2"/>
+    ${recent.map((e, i) => {
+      const x = pad + i * stepX;
+      const y = h - pad - ((e.energy - 1) / 4) * (h - pad * 2);
+      return `<circle cx="${x}" cy="${y}" r="3" fill="#1a1a1a"/>`;
+    }).join('')}
+  `;
+}
+
+// Reset
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (confirm('Delete all your check-ins? This cannot be undone.')) {
+    localStorage.removeItem(STORAGE_KEY);
+    renderInsights();
+    showToast('all data cleared');
+  }
+});
+</script>
+</body>
+</html>
