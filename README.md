@@ -6,21 +6,30 @@ Course final project. Client and developer both performed by Yan (see [client sp
 
 ## Run it
 
-No build step. Open `app/index.html` in any modern browser. All data is stored in your browser's `localStorage` — nothing leaves your machine.
+### Live URL
 
-```bash
+🔗 **https://510-client-developer.vercel.app** *(URL will be confirmed after Vercel deployment)*
+
+Auto-deployed from `main` via Vercel. Every merge into `main` triggers a fresh production build.
+
+### Run locally
+
+No build step. Open `index.html` in any modern browser. All data is stored in your browser's `localStorage` — nothing leaves your machine.
+
+​```bash
 # from repo root
-open app/index.html        # macOS
-xdg-open app/index.html    # linux
-start app/index.html       # windows
-```
+open index.html        # macOS
+xdg-open index.html    # linux
+start index.html       # windows
+​```
 
 ## What's in here
 
 ```
 .
-├── app/
-│   └── index.html              # the MVP — single-file web app
+├── index.html                  # the MVP — single-file web app (deployed root)
+├── vercel.json                 # Vercel deployment config
+├── .env.example                # env-variable template (no vars currently used)
 ├── docs/
 │   ├── client-spec.md          # the spec the developer is building against
 │   └── mid-point-check.md      # Client-02 review (this assignment)
@@ -45,7 +54,8 @@ Original timeline is in [client-spec.md §5](docs/client-spec.md#5-initial-timel
 | Sprint 1 — form + storage | Apr 13 – Apr 26 | ✅ done | AC-1, AC-2, AC-3, AC-8 pass |
 | Sprint 2 — history + insights | Apr 27 – May 4 | ✅ done | AC-4, AC-5, AC-6, AC-7 pass |
 | **Mid-point check** | **May 4** | **✅ in progress** | **This document set** |
-| Sprint 3 — bug fixes + polish | May 5 – May 18 | ⏳ upcoming | Resolves 3 bugs filed today |
+| Sprint 3 — bug fixes + polish | May 5 – May 18 | 🔄 in progress | Bug #1 resolved in this PR; Bug #2, #3 next |
+| Developer-03 — deployment | May 12 – May 18 | ✅ done | Vercel auto-deploy from main; .env.example provided |
 | Mobile / a11y pass | May 12 – May 18 | ⏳ upcoming | AC-9 needs verification on real devices |
 | Demo prep | May 19 – May 25 | ⏳ upcoming | Demo script, deck, GitHub Pages deploy |
 | Demo day | per course schedule | ⏳ upcoming | — |
