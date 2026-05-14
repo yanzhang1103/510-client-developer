@@ -43,7 +43,7 @@
   .subtitle { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 32px; }
 
   .field { margin-bottom: 28px; }
-  .field label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+  .field label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; transition: color 0.2s ease; }
 
   .scale { display: flex; gap: 6px; }
   .scale button {
@@ -52,6 +52,10 @@
   }
   .scale button:hover { background: var(--ink); color: var(--bg); }
   .scale button.selected { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+  /* Bug #1 fix: highlight missing fields on failed validation */
+  .scale.missing button { border-color: var(--accent); }
+  .field.missing label { color: var(--accent); }
 
   textarea, input[type="text"] {
     width: 100%; padding: 14px; background: var(--card); border: 1.5px solid var(--line);
@@ -112,7 +116,7 @@
 
 <header class="site">
   <h1>creator check-in</h1>
-  <span class="meta">v0.2 · mvp</span>
+  <span class="meta">v0.3 · mvp</span>
 </header>
 
 <nav class="tabs">
@@ -134,17 +138,17 @@
     </div>
   </div>
 
-  <div class="field">
+  <div class="field" id="energyField">
     <label>Energy <span id="energyLabel">— / 5</span></label>
     <div class="scale" id="energyScale"></div>
   </div>
 
-  <div class="field">
+  <div class="field" id="focusField">
     <label>Focus <span id="focusLabel">— / 5</span></label>
     <div class="scale" id="focusScale"></div>
   </div>
 
-  <div class="field">
+  <div class="field" id="moodField">
     <label>Mood <span id="moodLabel">— / 5</span></label>
     <div class="scale" id="moodScale"></div>
   </div>
@@ -201,6 +205,11 @@ let state = {
   mood: null,
 };
 
+// Helper: clear missing-field highlights
+function clearMissingHighlights() {
+  document.querySelectorAll('.field, .scale').forEach(el => el.classList.remove('missing'));
+}
+
 // Build scales
 function buildScale(id, key) {
   const wrap = document.getElementById(id);
@@ -213,6 +222,9 @@ function buildScale(id, key) {
       b.classList.add('selected');
       state[key] = i;
       document.getElementById(key + 'Label').textContent = i + ' / 5';
+      // Bug #1 fix: clear the missing highlight when user selects a value
+      wrap.classList.remove('missing');
+      wrap.closest('.field').classList.remove('missing');
     });
     wrap.appendChild(b);
   }
@@ -244,10 +256,27 @@ document.querySelectorAll('.tab').forEach(t => {
 
 // Save
 document.getElementById('saveBtn').addEventListener('click', () => {
+  // Bug #1 fix: clear previous missing-field highlights
+  clearMissingHighlights();
+
   if (state.energy == null || state.focus == null || state.mood == null) {
+    // Bug #1 fix: visually mark which fields are missing
+    if (state.energy == null) {
+      document.getElementById('energyScale').classList.add('missing');
+      document.getElementById('energyField').classList.add('missing');
+    }
+    if (state.focus == null) {
+      document.getElementById('focusScale').classList.add('missing');
+      document.getElementById('focusField').classList.add('missing');
+    }
+    if (state.mood == null) {
+      document.getElementById('moodScale').classList.add('missing');
+      document.getElementById('moodField').classList.add('missing');
+    }
     showToast('please rate energy, focus, and mood');
     return;
   }
+
   const entry = {
     id: Date.now(),
     timestamp: new Date().toISOString(),
