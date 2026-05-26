@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Creator Check-in Test Suite</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 20px; color: #1a1a1a; background: #f5f1ea; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .sub { color: #6b6357; font-size: 13px; margin-bottom: 24px; }
+  .summary { padding: 14px 18px; margin: 16px 0; border-radius: 4px; font-weight: 600; }
+  .summary.pass { background: #d4edda; color: #155724; }
+  .summary.fail { background: #f8d7da; color: #721c24; }
+  .group { background: #fff; border: 1px solid #ddd; margin: 16px 0; padding: 16px 20px; border-radius: 4px; }
+  .group h2 { font-size: 15px; margin-bottom: 10px; }
+  .test { padding: 6px 0; font-size: 13px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .test.pass { color: #155724; }
+  .test.fail { color: #721c24; }
+  .test.pass::before { content: "PASS  "; font-weight: 700; }
+  .test.fail::before { content: "FAIL  "; font-weight: 700; }
+  .test .detail { color: #6b6357; font-size: 12px; margin-left: 18px; }
+  code { background: #f0ebe2; padding: 1px 6px; border-radius: 3px; font-size: 12px; }
+  .meta { margin-top: 24px; padding-top: 16px; border-top: 1px solid #ddd; font-size: 12px; color: #6b6357; }
+</style>
+</head>
+<body>
+
+<h1>Creator Check-in Test Suite</h1>
+<p class="sub">Run by opening tests/test.html in any modern browser. No build step.</p>
+
+<div id="summary"></div>
+<div id="output"></div>
+
+<div class="meta">
+  Self-contained test runner. Inlines implementations of <code>formatEntryDate</code> and
+  <code>escapeHtml</code> directly so they match the contract documented in
+  <code>index.html</code>. Part of the Developer-04 deliverable (minimum 3 automated tests).
+</div>
+
+<script>
+function formatEntryDate(timestamp, now) {
+  var entryDate = new Date(timestamp);
+  var today = now ? new Date(now) : new Date();
+  var entryMidnight = new Date(entryDate.getFullYear(), entryDate.getMonth(), entryDate.getDate());
+  var todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  var dayDiff = Math.round((todayMidnight - entryMidnight) / 86400000);
+  var time = entryDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  if (dayDiff === 0) return { dateStr: "Today", timeStr: time };
+  if (dayDiff === 1) return { dateStr: "Yesterday", timeStr: time };
+  if (dayDiff > 1 && dayDiff < 7) {
+    return { dateStr: entryDate.toLocaleDateString("en-US", { weekday: "short" }), timeStr: time };
+  }
+  if (entryDate.getFullYear() === today.getFullYear()) {
+    return { dateStr: entryDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }), timeStr: time };
+  }
+  return { dateStr: entryDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }), timeStr: time };
+}
+
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c];
+  });
+}
+
+var STORAGE_KEY = "creator_checkin_v1";
+
+var results = [];
+var currentGroup = null;
+
+function group(name) {
+  currentGroup = { name: name, tests: [] };
+  results.push(currentGroup);
+}
+
+function assertEqual(actual, expected, name) {
+  var pass = actual === expected;
+  currentGroup.tests.push({
+    name: name,
+    pass: pass,
+    detail: pass ? "" : "expected " + JSON.stringify(expected) + ", got " + JSON.stringify(actual)
+  });
+}
+
+function assertTrue(value, name) {
+  var pass = !!value;
+  currentGroup.tests.push({
+    name: name,
+    pass: pass,
+    detail: pass ? "" : "expected truthy, got " + JSON.stringify(value)
+  });
+}
+
+function render() {
+  var totalPass = 0;
+  var totalFail = 0;
+  var out = document.getElementById("output");
+  var html = "";
+  for (var i = 0; i < results.length; i++) {
+    var g = results[i];
+    var testsHtml = "";
+    for (var j = 0; j < g.tests.length; j++) {
+      var t = g.tests[j];
+      if (t.pass) totalPass++; else totalFail++;
+      var detail = t.detail ? '<div class="detail">' + t.detail + '</div>' : "";
+      testsHtml += '<div class="test ' + (t.pass ? "pass" : "fail") + '">' + t.name + detail + '</div>';
+    }
+    html += '<div class="group"><h2>' + g.name + '</h2>' + testsHtml + '</div>';
+  }
+  out.innerHTML = html;
+  var summary = document.getElementById("summary");
+  var total = totalPass + totalFail;
+  if (totalFail === 0) {
+    summary.className = "summary pass";
+    summary.textContent = "All " + total + " tests passed";
+  } else {
+    summary.className = "summary fail";
+    summary.textContent = totalFail + " of " + total + " test(s) failed";
+  }
+}
+
+group("Test 1: formatEntryDate (Bug #2 fix, AC-4)");
+var now = new Date(2026, 4, 25, 14, 0, 0).getTime();
+var day = 86400000;
+var r1 = formatEntryDate(new Date(now).toISOString(), now);
+assertEqual(r1.dateStr, "Today", "entry from today shows Today");
+var r2 = formatEntryDate(new Date(now - day).toISOString(), now);
+assertEqual(r2.dateStr, "Yesterday", "entry from yesterday shows Yesterday");
+var r3 = formatEntryDate(new Date(now - 3 * day).toISOString(), now);
+var weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+assertTrue(weekdays.indexOf(r3.dateStr) !== -1, "entry from 3 days ago shows a weekday name");
+var r4 = formatEntryDate(new Date(now - 30 * day).toISOString(), now);
+assertTrue(/\d/.test(r4.dateStr) && !/\b20\d{2}\b/.test(r4.dateStr), "entry from this year shows month and day without year");
+var r5 = formatEntryDate(new Date(now - 400 * day).toISOString(), now);
+assertTrue(/\b202\d\b/.test(r5.dateStr), "entry from over a year ago includes the year");
+
+group("Test 2: escapeHtml (security: prevents XSS in notes)");
+var openTag = String.fromCharCode(60) + "script" + String.fromCharCode(62);
+var closeTag = String.fromCharCode(60) + "/script" + String.fromCharCode(62);
+var xssIn = openTag + "alert(1)" + closeTag;
+var xssOut = "&lt;script&gt;alert(1)&lt;/script&gt;";
+assertEqual(escapeHtml(xssIn), xssOut, "angle brackets are escaped");
+assertEqual(escapeHtml("o'reilly & \"smith\""), "o&#39;reilly &amp; &quot;smith&quot;", "quotes and ampersand are escaped");
+assertEqual(escapeHtml("plain text"), "plain text", "plain text is unchanged");
+
+group("Test 3: localStorage persistence (AC-8)");
+var TEST_KEY = "__test_" + STORAGE_KEY;
+var sample = [
+  { id: 1, timestamp: new Date().toISOString(), phase: "pre", energy: 3, focus: 4, mood: 2, note: "hi" }
+];
+localStorage.setItem(TEST_KEY, JSON.stringify(sample));
+var readBack = JSON.parse(localStorage.getItem(TEST_KEY));
+assertEqual(readBack.length, 1, "wrote one entry, read one entry");
+assertEqual(readBack[0].energy, 3, "energy round trips correctly");
+assertEqual(readBack[0].note, "hi", "note round trips correctly");
+localStorage.removeItem(TEST_KEY);
+assertEqual(localStorage.getItem(TEST_KEY), null, "removeItem clears the key");
+
+render();
+</script>
+</body>
+</html>

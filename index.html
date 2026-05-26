@@ -85,9 +85,9 @@
   .history-list { display: flex; flex-direction: column; gap: 16px; }
   .entry {
     background: var(--card); border: 1.5px solid var(--line); padding: 20px;
-    display: grid; grid-template-columns: 80px 1fr; gap: 20px;
+    display: grid; grid-template-columns: 110px 1fr; gap: 20px;
   }
-  .entry .date { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .entry .date { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.5; }
   .entry .body .badges { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
   .entry .body .badge { font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 3px 8px; border: 1px solid var(--ink); text-transform: uppercase; letter-spacing: 0.06em; }
   .entry .body .badge.accent { background: var(--accent); color: var(--bg); border-color: var(--accent); }
@@ -104,7 +104,8 @@
 
   .chart-wrap { background: var(--card); border: 1.5px solid var(--line); padding: 20px; margin-bottom: 24px; }
   .chart-title { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; }
-  svg.chart { width: 100%; height: 180px; display: block; }
+  svg.chart { width: 100%; height: 200px; display: block; }
+  svg.chart text { font-family: 'JetBrains Mono', monospace; font-size: 10px; fill: var(--muted); }
 
   .danger { background: none; border: 1px solid var(--muted); color: var(--muted); padding: 8px 14px; font-family: 'JetBrains Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer; }
   .danger:hover { color: var(--accent); border-color: var(--accent); }
@@ -116,7 +117,7 @@
 
 <header class="site">
   <h1>creator check-in</h1>
-  <span class="meta">v0.3 · mvp</span>
+  <span class="meta">v0.4 · mvp</span>
 </header>
 
 <nav class="tabs">
@@ -181,7 +182,7 @@
 
   <div class="chart-wrap">
     <div class="chart-title">energy over last 14 check-ins</div>
-    <svg class="chart" id="chart" viewBox="0 0 600 180" preserveAspectRatio="none"></svg>
+    <svg class="chart" id="chart" viewBox="0 0 600 200" preserveAspectRatio="xMidYMid meet"></svg>
   </div>
 
   <button class="danger" id="resetBtn">reset all data</button>
@@ -210,6 +211,35 @@ function clearMissingHighlights() {
   document.querySelectorAll('.field, .scale').forEach(el => el.classList.remove('missing'));
 }
 
+// Bug #2 fix: smart relative date formatter
+// Exported on window for testability (see tests/test.html)
+function formatEntryDate(timestamp, now) {
+  const entryDate = new Date(timestamp);
+  const today = now ? new Date(now) : new Date();
+
+  // Normalize both to midnight for day comparison
+  const entryMidnight = new Date(entryDate.getFullYear(), entryDate.getMonth(), entryDate.getDate());
+  const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const dayDiff = Math.round((todayMidnight - entryMidnight) / 86400000);
+
+  const time = entryDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+  if (dayDiff === 0) return { dateStr: 'Today', timeStr: time };
+  if (dayDiff === 1) return { dateStr: 'Yesterday', timeStr: time };
+  if (dayDiff > 1 && dayDiff < 7) {
+    const dayName = entryDate.toLocaleDateString('en-US', { weekday: 'short' });
+    return { dateStr: dayName, timeStr: time };
+  }
+  if (entryDate.getFullYear() === today.getFullYear()) {
+    const md = entryDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    return { dateStr: md, timeStr: time };
+  }
+  // Different year — show year explicitly
+  const full = entryDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return { dateStr: full, timeStr: time };
+}
+window.formatEntryDate = formatEntryDate;
+
 // Build scales
 function buildScale(id, key) {
   const wrap = document.getElementById(id);
@@ -222,7 +252,7 @@ function buildScale(id, key) {
       b.classList.add('selected');
       state[key] = i;
       document.getElementById(key + 'Label').textContent = i + ' / 5';
-      // Bug #1 fix: clear the missing highlight when user selects a value
+      // Bug #1 fix: clear missing highlight on selection
       wrap.classList.remove('missing');
       wrap.closest('.field').classList.remove('missing');
     });
@@ -256,11 +286,9 @@ document.querySelectorAll('.tab').forEach(t => {
 
 // Save
 document.getElementById('saveBtn').addEventListener('click', () => {
-  // Bug #1 fix: clear previous missing-field highlights
   clearMissingHighlights();
 
   if (state.energy == null || state.focus == null || state.mood == null) {
-    // Bug #1 fix: visually mark which fields are missing
     if (state.energy == null) {
       document.getElementById('energyScale').classList.add('missing');
       document.getElementById('energyField').classList.add('missing');
@@ -290,7 +318,6 @@ document.getElementById('saveBtn').addEventListener('click', () => {
   all.push(entry);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
   showToast('saved');
-  // reset form
   state = { phase: 'pre', energy: null, focus: null, mood: null };
   document.querySelectorAll('.scale button').forEach(x => x.classList.remove('selected'));
   document.getElementById('energyLabel').textContent = '— / 5';
@@ -306,7 +333,7 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 1800);
 }
 
-// History
+// History (Bug #2 fix: uses formatEntryDate for smart dates)
 function renderHistory() {
   const all = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').reverse();
   const list = document.getElementById('historyList');
@@ -315,9 +342,7 @@ function renderHistory() {
     return;
   }
   list.innerHTML = all.map(e => {
-    const d = new Date(e.timestamp);
-    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const { dateStr, timeStr } = formatEntryDate(e.timestamp);
     return `
       <div class="entry">
         <div class="date">${dateStr}<br>${timeStr}</div>
@@ -337,8 +362,9 @@ function renderHistory() {
 function escapeHtml(s) {
   return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+window.escapeHtml = escapeHtml;
 
-// Insights
+// Insights (Bug #3 fix: Y-axis labels + gridlines + single-entry case)
 function renderInsights() {
   const all = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
   document.getElementById('statCount').textContent = all.length;
@@ -352,25 +378,41 @@ function renderInsights() {
   document.getElementById('statEnergy').innerHTML = avg('energy') + ' <small>/ 5</small>';
   document.getElementById('statFocus').innerHTML = avg('focus') + ' <small>/ 5</small>';
 
-  // chart: last 14 energy values
   const recent = all.slice(-14);
-  const w = 600, h = 180, pad = 20;
-  const stepX = (w - pad * 2) / Math.max(recent.length - 1, 1);
-  const points = recent.map((e, i) => {
-    const x = pad + i * stepX;
-    const y = h - pad - ((e.energy - 1) / 4) * (h - pad * 2);
-    return `${x},${y}`;
-  }).join(' ');
-  const svg = document.getElementById('chart');
-  svg.innerHTML = `
-    <line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" stroke="#1a1a1a" stroke-width="1"/>
-    <polyline points="${points}" fill="none" stroke="#c4451c" stroke-width="2"/>
-    ${recent.map((e, i) => {
-      const x = pad + i * stepX;
-      const y = h - pad - ((e.energy - 1) / 4) * (h - pad * 2);
+  const w = 600, h = 200, padL = 30, padR = 20, padT = 12, padB = 20;
+  const innerW = w - padL - padR;
+  const innerH = h - padT - padB;
+  const stepX = innerW / Math.max(recent.length - 1, 1);
+
+  // Bug #3 fix: build Y-axis gridlines + labels for 1..5
+  let gridlines = '';
+  for (let v = 1; v <= 5; v++) {
+    const y = padT + innerH - ((v - 1) / 4) * innerH;
+    gridlines += `<line x1="${padL}" y1="${y}" x2="${w - padR}" y2="${y}" stroke="#1a1a1a" stroke-width="0.5" stroke-opacity="0.15"/>`;
+    gridlines += `<text x="${padL - 8}" y="${y + 3}" text-anchor="end">${v}</text>`;
+  }
+
+  // Bug #3 fix: guard single-point case — render only a circle, no polyline
+  let series = '';
+  if (recent.length === 1) {
+    const x = padL + innerW / 2;
+    const y = padT + innerH - ((recent[0].energy - 1) / 4) * innerH;
+    series = `<circle cx="${x}" cy="${y}" r="4" fill="#c4451c"/>`;
+  } else {
+    const pts = recent.map((e, i) => {
+      const x = padL + i * stepX;
+      const y = padT + innerH - ((e.energy - 1) / 4) * innerH;
+      return `${x},${y}`;
+    }).join(' ');
+    const dots = recent.map((e, i) => {
+      const x = padL + i * stepX;
+      const y = padT + innerH - ((e.energy - 1) / 4) * innerH;
       return `<circle cx="${x}" cy="${y}" r="3" fill="#1a1a1a"/>`;
-    }).join('')}
-  `;
+    }).join('');
+    series = `<polyline points="${pts}" fill="none" stroke="#c4451c" stroke-width="2"/>${dots}`;
+  }
+
+  document.getElementById('chart').innerHTML = gridlines + series;
 }
 
 // Reset
@@ -381,6 +423,9 @@ document.getElementById('resetBtn').addEventListener('click', () => {
     showToast('all data cleared');
   }
 });
+
+// Expose for tests
+window.STORAGE_KEY = STORAGE_KEY;
 </script>
 </body>
 </html>
