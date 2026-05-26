@@ -40,6 +40,20 @@ start index.html       # windows
 └── README.md
 ```
 
+## Status (Sprint 4, May 25, 2026)
+
+All Developer-04 deliverables complete. PR #5 merged.
+
+| Deliverable | Where to find it |
+|-------------|------------------|
+| Bug #2 fix (history date format) | `index.html` `formatEntryDate()` + PR [#5](../../pull/5), closes [#2](../../issues/2) |
+| Bug #3 fix (insights chart Y-axis) | `index.html` `renderInsights()` + PR [#5](../../pull/5), closes [#3](../../issues/3) |
+| Automated tests (12 assertions, 3 groups) | `tests/test.html` — open in a browser |
+| Security review | [`SECURITY.md`](SECURITY.md) |
+| PR review feedback | PR [#5](../../pull/5) conversation — 3 inline comments + 3 replies |
+
+All 3 client-reported bugs now closed. Live URL deployed from latest `main`: https://510-client-developer.vercel.app
+
 ## Status (mid-point, May 4, 2026)
 
 MVP is functional. All check-in / history / insights flows work end-to-end. Three bugs filed during the mid-point review (see GitHub Issues). On track for Sprint 3.
