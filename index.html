@@ -211,8 +211,10 @@ function clearMissingHighlights() {
   document.querySelectorAll('.field, .scale').forEach(el => el.classList.remove('missing'));
 }
 
-// Bug #2 fix: smart relative date formatter
-// Exported on window for testability (see tests/test.html)
+// Bug #2 fix: smart relative date formatter.
+// Exported on window for testability (see tests/test.html).
+// KEEP IN SYNC: tests/test.html inlines its own copy of this function and
+// escapeHtml() below. If you change the contract here, mirror the change there.
 function formatEntryDate(timestamp, now) {
   const entryDate = new Date(timestamp);
   const today = now ? new Date(now) : new Date();
