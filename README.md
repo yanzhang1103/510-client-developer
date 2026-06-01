@@ -89,14 +89,14 @@ See [client-spec.md §4](docs/client-spec.md#4-acceptance-criteria) for the full
 | # | Status |
 |---|--------|
 | AC-1 submit valid check-in | ✅ pass |
-| AC-2 reject incomplete | ⚠️ partial — see [#1](../../issues/1) |
+| AC-2 reject incomplete | ✅ pass (fix verified in [#1](../../issues/1)) |
 | AC-3 form clears after save | ✅ pass |
-| AC-4 history view | ⚠️ partial — see [#2](../../issues/2) |
+| AC-4 history view | ✅ pass (fix verified in [#2](../../issues/2)) |
 | AC-5 insights totals | ✅ pass |
-| AC-6 chart edge cases | ⚠️ partial — see [#3](../../issues/3) |
+| AC-6 chart edge cases | ✅ pass (fix verified in [#3](../../issues/3)) |
 | AC-7 reset confirmation | ✅ pass |
 | AC-8 reload persistence | ✅ pass |
-| AC-9 mobile 375px | ⏳ not yet verified |
+| AC-9 mobile 375px | ✅ pass (verified Jun 1, 2026 — see `docs/final-acceptance.md`) |
 
 ## License
 
