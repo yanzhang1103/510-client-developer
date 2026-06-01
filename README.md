@@ -8,7 +8,7 @@ Course final project. Client and developer both performed by Yan (see [client sp
 
 ### Live URL
 
-🔗 **https://510-client-developer.vercel.app** *(URL will be confirmed after Vercel deployment)*
+🔗 **https://510-client-developer.vercel.app**
 
 Auto-deployed from `main` via Vercel. Every merge into `main` triggers a fresh production build.
 
